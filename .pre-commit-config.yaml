@@ -14,3 +14,4 @@ repos:
   rev: 3.7.9
   hooks:
   - id: flake8
+    args: ['--config=flake8.cfg','--max-line-length=120']
