@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import importlib
+import inspect
 import json
 import os
 import shutil
 import tarfile
 from typing import Any, Callable, Dict, Iterable, List, MutableMapping, Optional, Union
+
+from omegaconf import DictConfig, OmegaConf
 
 
 def _read_json_per_line(file_path, filter_, ignore_exception):
@@ -143,3 +147,52 @@ def check_path(data_dir, name, ignore_exception=False):
             raise Exception(f"No file named {name} in {data_dir}")
     else:
         return os.path.join(data_dir, names[0])
+
+
+def dump_config(config, config_path):
+    assert config_path.endswith(".yaml")
+    with open(config_path, "w") as f:
+        OmegaConf.save(DictConfig(config), f)
+
+
+def read_config(config_path):
+    assert config_path.endswith(".yaml")
+    with open(config_path) as f:
+        config = OmegaConf.load(f)
+    return config
+
+
+def find_class(module_class_path):
+    module_name = ".".join(module_class_path.split(".")[:-1])
+    class_name = module_class_path.split(".")[-1]
+    module = importlib.import_module(module_name)
+    target_cls = getattr(module, class_name)
+    return target_cls
+
+
+def get_class_fullname(o: Any):
+    module = o.__class__.__module__
+    name = o.__class__.__name__
+    return ".".join([module, name])
+
+
+def incept_function_args(func):
+    args = inspect.getfullargspec(func)
+    args = args.args
+    return [a for a in args if a != "self"]
+
+
+def get_attr_method_from_module(module_name, attr_method_name):
+    module = importlib.import_module(module_name)
+    attr_method = getattr(module, attr_method_name)
+    return attr_method
+
+
+def instantiate_interface(target: str):
+    module, *attrs = target.split(".")
+    module = importlib.import_module(module)
+
+    interface = module
+    for attr in attrs:
+        interface = getattr(interface, attr)
+    return interface
